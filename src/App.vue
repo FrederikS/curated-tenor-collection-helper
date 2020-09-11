@@ -11,7 +11,7 @@
       </el-form-item>
     </el-form>
     <div class="tinder" v-if="gifs.length > 0">
-      <el-button @click="add">Add</el-button>
+      <el-button @click="add" :disabled="inLikes()">Add</el-button>
       <img :src="gifs[index].media[0].tinygif.url" />
       <el-button @click="next">Next</el-button>
     </div>
@@ -28,18 +28,28 @@ export default {
       query: "",
       gifs: [],
       index: 0,
-      pos: {}
+      pos: {},
+      likes: []
     };
   },
   mounted() {
     if (localStorage.pos) {
       this.pos = JSON.parse(localStorage.pos);
     }
+    if (localStorage.likes) {
+      this.likes = JSON.parse(localStorage.likes);
+    }
   },
   watch: {
     pos: {
-      handler: function(newPos) {
+      handler(newPos) {
         localStorage.pos = JSON.stringify(newPos);
+      },
+      deep: true
+    },
+    likes: {
+      handler(likes) {
+        localStorage.likes = JSON.stringify(likes);
       },
       deep: true
     }
@@ -68,7 +78,20 @@ export default {
         this.index = 0;
       }
     },
-    add() {}
+    add() {
+      const item = this.gifs[this.index];
+      const { url, dims } = item.media[0].gif;
+      this.likes.push({
+        id: item.id,
+        url,
+        dims
+      });
+    },
+    inLikes() {
+      return (
+        this.likes.filter(v => v.id === this.gifs[this.index].id).length > 0
+      );
+    }
   }
 };
 </script>
