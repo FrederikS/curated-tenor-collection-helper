@@ -11,38 +11,64 @@
       </el-form-item>
     </el-form>
     <div class="tinder" v-if="gifs.length > 0">
-      <img :src="gifs[index].media[0].gif.url" />
-      <div class="actions">
-        <el-button @click="next">Next</el-button>
-      </div>
+      <el-button @click="add">Add</el-button>
+      <img :src="gifs[index].media[0].tinygif.url" />
+      <el-button @click="next">Next</el-button>
     </div>
   </main>
 </template>
 
 <script>
+import Vue from "vue";
+
 export default {
   name: "App",
   data() {
     return {
       query: "",
       gifs: [],
-      index: 0
+      index: 0,
+      pos: {}
     };
+  },
+  mounted() {
+    if (localStorage.pos) {
+      this.pos = JSON.parse(localStorage.pos);
+    }
+  },
+  watch: {
+    pos: {
+      handler: function(newPos) {
+        localStorage.pos = JSON.stringify(newPos);
+      },
+      deep: true
+    }
   },
   methods: {
     async search() {
       const key = process.env.VUE_APP_TENOR_API_KEY;
       const res = await fetch(
-        `https://api.tenor.com/v1/search?q=${this.query}&key=${key}`
+        `https://api.tenor.com/v1/search?q=${
+          this.query
+        }&key=${key}&media_filter=minimal&pos=${this.pos[this.query] || 0}`
       );
       const data = await res.json();
       this.gifs = data.results;
-    },
-    next() {
-      if (this.index < this.gifs.length) {
-        this.index++;
+      if (!this.pos[this.query]) {
+        Vue.set(this.pos, this.query, 0);
       }
-    }
+    },
+    async next() {
+      if (this.index < this.gifs.length - 1) {
+        this.index++;
+        Vue.set(this.pos, this.query, this.pos[this.query] + 1);
+      } else {
+        Vue.set(this.pos, this.query, this.pos[this.query] + 1);
+        await this.search();
+        this.index = 0;
+      }
+    },
+    add() {}
   }
 };
 </script>
@@ -59,12 +85,14 @@ body {
   width: 500px;
 }
 
-.tinder img {
-  margin: auto;
+.tinder {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
-.tinder .actions {
-  margin: 10px;
+.tinder img {
+  margin: 0 50px;
 }
 
 #app {
